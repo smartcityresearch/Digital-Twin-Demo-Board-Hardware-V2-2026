@@ -6,7 +6,7 @@ This project runs a Raspberry Pi agent for sensors, push buttons, and ESP actuat
 
 - `agent.py`:
   - Main runtime code.
-  - Reads sensors (VEML7700, SI7021, SGP30, PIR).
+  - Reads sensors (VEML7700, SI7021, Prana Air NDIR CO2, PIR).
   - Handles push-button toggles.
   - Sends sensor data + heartbeat to API.
   - Polls pending commands.
@@ -32,7 +32,7 @@ This project runs a Raspberry Pi agent for sensors, push buttons, and ESP actuat
 - Connected hardware:
   - VEML7700
   - SI7021
-  - SGP30
+  - Prana Air NDIR CO2 
   - PIR + push buttons
   - ESP receiver at configured IP/port in `agent.py`
 
