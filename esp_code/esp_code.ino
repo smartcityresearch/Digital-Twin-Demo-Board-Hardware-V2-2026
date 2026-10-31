@@ -32,7 +32,7 @@ CRGB tube[TUBE_LEDS];
 CRGB* strips[4]  = { strip1, strip2, strip3, strip4 };
 int   ledPins[4] = { LED1, LED2, LED3, LED4 };
 
-WebServer server(8100);
+WebServer server(8100);   // must match ESP_PORT in Python
 
 int animationQueue[4];
 int queueSize = 0;
@@ -117,24 +117,9 @@ bool gradientSnake(CRGB* strip, int& pos)
 // ---------------- BUZZER ----------------
 void buzzerControl()
 {
-  if (buzzer_mode == 0)
-  {
-    noTone(BUZZER);
-    return;
-  }
-
-  unsigned long period;
-  if      (buzzer_mode == 1) period = 1600; 
-  else if (buzzer_mode == 2) period = 800;  
-  else                       period = 300;  
-
-  unsigned long half = period / 2;
-  unsigned long t    = millis() % period;
-
-  if (t < half)
-    tone(BUZZER, 2000);
-  else
-    noTone(BUZZER);
+  // Python sends 0/1 and makes its own beep pattern, so just on/off here
+  if (buzzer_mode == 1) tone(BUZZER, 2000);
+  else                  noTone(BUZZER);
 }
 
 // ---------------- HTTP HANDLER ----------------
@@ -146,7 +131,7 @@ void handleData()
   Serial.print("Raw JSON: ");
   Serial.println(body);
 
-  StaticJsonDocument<200> doc;
+  StaticJsonDocument<512> doc;
 
   if (deserializeJson(doc, body))
   {
@@ -157,12 +142,17 @@ void handleData()
 
   JsonArray arr = doc["cmd"];
 
-  if (arr.size() < 8)
+  // Python format (12 items):
+  // [strip1, led1, strip2, led2, strip3, led3, strip4, led4, buzzer, tube, [R,G,B], fan]
+  if (arr.size() < 12)
   {
     Serial.println("Invalid Command Array");
     server.send(400, "text/plain", "INVALID");
     return;
   }
+
+  int stripIdx[4] = {0, 2, 4, 6};
+  int ledIdx[4]   = {1, 3, 5, 7};
 
   if (currentStrip == -1 && queueIndex >= queueSize)
   {
@@ -170,16 +160,16 @@ void handleData()
     queueIndex = 0;
 
     clearAllStrips();
-    
+
     for (int i = 0; i < 4; i++)
     {
       snakePos[i] = 0;
 
-      if (arr[i] == 1)
+      if (arr[stripIdx[i]].as<int>() == 1)
       {
         animationQueue[queueSize++] = i;
       }
-      digitalWrite(ledPins[i], HIGH);
+      digitalWrite(ledPins[i], arr[ledIdx[i]].as<int>() ? HIGH : LOW);
     }
   }
   else
@@ -187,13 +177,13 @@ void handleData()
     Serial.println("Queue Busy - Ignoring New Strip Command");
   }
 
-  buzzer_mode = arr[4].as<int>();
-  tube_state  = (arr[5].as<int>() == 1); 
+  buzzer_mode = arr[8].as<int>();
+  tube_state  = (arr[9].as<int>() == 1);
 
-  JsonArray rgb = arr[6];
+  JsonArray rgb = arr[10];
   tubeColor = CRGB(rgb[0].as<int>(), rgb[1].as<int>(), rgb[2].as<int>());
 
-  fan_speed = arr[7].as<int>();
+  fan_speed = arr[11].as<int>();
 
   Serial.print("TUBE LEDs = ");
   Serial.println(TUBE_LEDS);
@@ -245,7 +235,7 @@ void setup()
   server.on("/data", HTTP_POST, handleData);
   server.begin();
 
-  Serial.println("Server started on port 8100");
+  Serial.println("Server started on port 9001");
 }
 
 // ---------------- LOOP ----------------
