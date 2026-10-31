@@ -40,7 +40,10 @@ int queueIndex = 0;
 int currentStrip = -1;
 
 // ---------------- WIFI ----------------
-const char* ssid = "SCRC_LAB_IOT";
+// const char* ssid = "esw-m19@iiith";
+// const char* pass = "e5W-eMai@3!20hOct";
+
+const char* ssid = "SCRC_R3";
 const char* pass = "Scrciiith@123";
 
 // ---------------- STATES ----------------
@@ -60,7 +63,7 @@ void connectWiFi()
   WiFi.disconnect(true);
   WiFi.mode(WIFI_STA);
 
-  Serial.println("Connecting to IIIT-Guest...");
+  Serial.println(String("Connecting to ") + ssid);
   WiFi.begin(ssid, pass);
 
   int attempt = 0;
@@ -73,7 +76,7 @@ void connectWiFi()
 
   if (WiFi.status() == WL_CONNECTED)
   {
-    Serial.println("\nConnected to IIIT-Guest");
+    Serial.println(String("Connected to ") + ssid);
     Serial.println(WiFi.localIP());
   }
   else
